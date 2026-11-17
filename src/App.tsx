@@ -1,8 +1,9 @@
 import { StudentApp } from './pages/StudentApp';
+import { Teacher } from './pages/Teacher';
 
 export function App() {
   const path = window.location.pathname.replace(/\/+$/, '') || '/';
-  if (path === '/teacher') return <Placeholder name="Teacher dashboard" />;
+  if (path === '/teacher') return <Teacher />;
   if (path === '/results') return <Placeholder name="Live results" />;
   return <StudentApp />;
 }
