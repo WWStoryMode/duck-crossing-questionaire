@@ -166,5 +166,42 @@ export function teacherState(): TeacherState {
 
 // ---------- demo mode ----------
 
-/** Placeholder until milestone 2.3. */
-export function addDemoSubmissions() {}
+let demoCounter = 0;
+
+function pick<T>(xs: readonly T[]): T {
+  return xs[Math.floor(Math.random() * xs.length)];
+}
+
+/** Plausible but varied answer: mostly preferred, sometimes an alternative, occasionally anything. */
+function demoAnswer(cardId: string): Answer {
+  const k = ANSWER_KEY[cardId];
+  const r = Math.random();
+  if (r < 0.55) return k.preferred;
+  if (r < 0.8 && k.alternatives.length) return pick(k.alternatives);
+  return pick(ANSWERS);
+}
+
+const DEMO_REASONS = [
+  'We disagreed on this one — it depends on whether the player has to act on the information.',
+  'It supports recognising the outcome, but not really explaining why.',
+  'Speed rewards could push players to rush, which feels unsafe.',
+  'This only helps if the game also gives feedback afterwards.',
+];
+
+/** Adds one clearly labelled demo response per table. */
+export function addDemoSubmissions() {
+  demoCounter++;
+  for (const t of TABLES) {
+    const answers = Object.fromEntries(t.cards.map((c) => [c.id, demoAnswer(c.id)]));
+    upsertSubmission(
+      {
+        table: t.id,
+        groupName: `DEMO group ${demoCounter}`,
+        answers,
+        debatableCardId: pick(t.cards).id,
+        justification: `[Demo] ${pick(DEMO_REASONS)}`,
+      },
+      true,
+    );
+  }
+}

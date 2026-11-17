@@ -42,7 +42,8 @@ export function attachSockets(httpServer: HttpServer) {
     socket.emit('state:public', publicState());
     if (isTeacher(socket.handshake.auth?.token)) joinTeacher(socket);
 
-    socket.on('teacher:auth', (token: unknown, ack: Ack = noop) => {
+    socket.on('teacher:auth', (token: unknown, maybeAck?: unknown) => {
+      const ack = (typeof maybeAck === 'function' ? maybeAck : noop) as Ack;
       if (!isTeacher(token)) return ack({ ok: false, error: 'Not authorised.' });
       joinTeacher(socket);
       ack({ ok: true });
@@ -52,8 +53,8 @@ export function attachSockets(httpServer: HttpServer) {
     let inFlight = false;
     let lastCreated: { id: string; at: number } | null = null;
 
-    socket.on('student:submit', (payload: unknown, ack: (r: SubmitAck) => void = noop) => {
-      if (typeof ack !== 'function') ack = noop;
+    socket.on('student:submit', (payload: unknown, maybeAck?: unknown) => {
+      const ack = (typeof maybeAck === 'function' ? maybeAck : noop) as (r: SubmitAck) => void;
       if (inFlight) return ack({ ok: false, error: 'Already submitting…' });
       inFlight = true;
       try {
@@ -76,8 +77,11 @@ export function attachSockets(httpServer: HttpServer) {
     // ---------- teacher ----------
     const teacherOnly =
       <T>(fn: (arg: T) => void) =>
-      (arg: T, ack: Ack = noop) => {
-        if (typeof ack !== 'function') ack = noop;
+      (...args: unknown[]) => {
+        // Supports both emit(ev, arg, ack) and emit(ev, ack).
+        const last = args[args.length - 1];
+        const ack: Ack = typeof last === 'function' ? (last as Ack) : noop;
+        const arg = (typeof args[0] === 'function' ? undefined : args[0]) as T;
         if (!socket.data.teacher) return ack({ ok: false, error: 'Not authorised.' });
         fn(arg);
         ack({ ok: true });
