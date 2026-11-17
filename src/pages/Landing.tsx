@@ -4,6 +4,7 @@ import type { TableId } from '../../shared/types.js';
 import { DuckFamily } from '../components/Duck';
 
 export function Landing({ onStart }: { onStart: (table: TableId, groupName: string) => void }) {
+  document.title = 'Duck Crossing';
   const [table, setTable] = useState<TableId | null>(null);
   const [groupName, setGroupName] = useState('');
   const [error, setError] = useState('');

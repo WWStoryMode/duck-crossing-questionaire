@@ -27,6 +27,14 @@ export function Activity({ table: tableId, groupName, onBack }: Props) {
   const [submitting, setSubmitting] = useState(false);
   const [notice, setNotice] = useState<Notice | null>(null);
   const submittingRef = useRef(false);
+  const headingRef = useRef<HTMLHeadingElement>(null);
+
+  // Move focus to the page heading when the activity opens (screen readers announce the table).
+  useEffect(() => {
+    headingRef.current?.focus();
+    document.title = `Table ${tableId} — Duck Crossing`;
+    window.scrollTo(0, 0);
+  }, [tableId]);
 
   const { state, connected } = usePublicState();
   const locked = !!state?.locked;
@@ -114,9 +122,9 @@ export function Activity({ table: tableId, groupName, onBack }: Props) {
         <div className="mx-auto flex max-w-3xl items-center gap-3 px-4 py-3">
           <Duck className="h-8 w-9 shrink-0" />
           <div className="min-w-0 flex-1">
-            <p className="truncate font-extrabold">
+            <h1 ref={headingRef} tabIndex={-1} className="truncate font-extrabold focus:outline-none">
               Table {table.id}: {table.title}
-            </p>
+            </h1>
             {groupName && <p className="truncate text-sm text-navy-light">Group: {groupName}</p>}
           </div>
           <p

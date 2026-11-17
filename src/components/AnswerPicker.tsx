@@ -20,9 +20,9 @@ export function AnswerPicker({ name, labelledBy, value, onChange, disabled }: Pr
         return (
           <label
             key={a}
-            className={`relative flex min-h-[52px] items-center justify-center rounded-xl border-2 px-2 py-2 text-center text-base font-bold transition focus-within:outline focus-within:outline-[3px] focus-within:outline-offset-2 focus-within:outline-navy ${
+            className={`relative flex min-h-[52px] items-center justify-center rounded-xl border-2 px-2 py-2 text-center text-base font-bold transition-colors focus-within:outline focus-within:outline-[3px] focus-within:outline-offset-2 focus-within:outline-navy ${
               checked ? 'border-navy bg-navy text-paper' : 'border-navy/25 bg-white text-navy'
-            } ${disabled ? 'cursor-not-allowed opacity-60' : 'cursor-pointer hover:border-navy'}`}
+            } ${disabled ? `cursor-not-allowed ${checked ? '' : 'opacity-75'}` : 'cursor-pointer hover:border-navy'}`}
           >
             <input
               type="radio"
