@@ -3,6 +3,7 @@ import { createServer } from 'node:http';
 import path from 'node:path';
 import fs from 'node:fs';
 import { loginTeacher } from './store.js';
+import { attachSockets } from './sockets.js';
 
 const PORT = Number(process.env.PORT) || 3000;
 const DIST = path.resolve(process.cwd(), 'dist');
@@ -32,6 +33,7 @@ if (fs.existsSync(DIST)) {
 }
 
 export const httpServer = createServer(app);
+attachSockets(httpServer);
 
 httpServer.listen(PORT, () => {
   console.log(`[duck-crossing] listening on http://localhost:${PORT}`);

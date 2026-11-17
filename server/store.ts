@@ -163,3 +163,8 @@ export function teacherState(): TeacherState {
   const submissions = [...session.submissions.values()].sort((a, b) => a.createdAt - b.createdAt);
   return { submissions };
 }
+
+// ---------- demo mode ----------
+
+/** Placeholder until milestone 2.3. */
+export function addDemoSubmissions() {}
