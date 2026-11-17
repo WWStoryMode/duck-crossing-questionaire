@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
-import { getTable } from '../../shared/content.js';
-import { TABLE_IDS, type TableId } from '../../shared/types.js';
+import { DISCLAIMER, getTable } from '../../shared/content.js';
+import { evaluate, EVALUATION_LABELS } from '../../shared/evaluate.js';
+import { ANSWERS, ANSWER_LABELS, TABLE_IDS, type AnswerCounts, type AnswerKey, type Evaluation, type TableId } from '../../shared/types.js';
 import { BarChart, BarLegend } from '../components/BarChart';
 import { Duck } from '../components/Duck';
 import { Outcomes } from '../components/Outcomes';
@@ -40,6 +41,7 @@ export function Results() {
 
   const groups = state?.groups[tableId] ?? { real: 0, demo: 0 };
   const respondents = groups.real + groups.demo;
+  const key = state?.revealed ? state.key : null;
 
   return (
     <div className="min-h-screen">
@@ -77,6 +79,12 @@ export function Results() {
 
         <div role="tabpanel" id="results-tab-panel" aria-labelledby={`results-tab-${tableId}`} className="space-y-5">
           <Outcomes table={table} large />
+          {key && (
+            <p className="rounded-xl bg-moss-light px-4 py-3 text-base lg:text-lg">
+              <strong>Suggested answers revealed.</strong> ★ = suggested answer, highlighted green · yellow = also defensible.{' '}
+              <span className="italic">{DISCLAIMER}</span>
+            </p>
+          )}
           <div className="flex flex-wrap items-center justify-between gap-3">
             <BarLegend showDemo={groups.demo > 0} />
             {groups.demo > 0 && (
@@ -98,7 +106,30 @@ export function Results() {
                     </span>
                     {card.text}
                   </h2>
-                  <BarChart counts={state.counts[card.id]} max={respondents} labelledBy={`res-${card.id}`} />
+                  <BarChart
+                    counts={state.counts[card.id]}
+                    max={respondents}
+                    labelledBy={`res-${card.id}`}
+                    markFor={
+                      key
+                        ? (a) => (key[card.id]?.preferred === a ? 'preferred' : key[card.id]?.alternatives.includes(a) ? 'alternative' : null)
+                        : undefined
+                    }
+                  />
+                  {key && key[card.id] && (
+                    <div className="mt-4 border-t border-navy/10 pt-3">
+                      <p className="text-base font-bold lg:text-lg">
+                        Suggested: {ANSWER_LABELS[key[card.id].preferred]}
+                        {key[card.id].alternatives.length > 0 && (
+                          <span className="font-medium">
+                            {' '}· Also defensible: {key[card.id].alternatives.map((a) => ANSWER_LABELS[a]).join(', ')}
+                          </span>
+                        )}
+                      </p>
+                      <Tallies answerKey={key} cardId={card.id} counts={state.counts[card.id]} />
+                      <p className="mt-2 leading-relaxed lg:text-lg">{key[card.id].explanation}</p>
+                    </div>
+                  )}
                 </article>
               ))}
             </div>
@@ -106,5 +137,30 @@ export function Results() {
         </div>
       </main>
     </div>
+  );
+}
+
+const TALLY_STYLE: Record<Evaluation, string> = {
+  match: 'bg-moss text-white',
+  discussion: 'bg-sun text-navy',
+  reconsider: 'border-2 border-dashed border-navy bg-white text-navy',
+};
+
+/** How many groups matched / gave a defensible alternative / should reconsider. */
+function Tallies({ answerKey, cardId, counts }: { answerKey: AnswerKey; cardId: string; counts: AnswerCounts }) {
+  const tally: Record<Evaluation, number> = { match: 0, discussion: 0, reconsider: 0 };
+  for (const a of ANSWERS) {
+    const ev = evaluate(answerKey, cardId, a);
+    if (ev) tally[ev] += counts[a].real + counts[a].demo;
+  }
+  return (
+    <ul className="mt-2 flex flex-wrap gap-2" aria-label="Group results for this card">
+      {(Object.keys(tally) as Evaluation[]).map((ev) => (
+        <li key={ev} className={`rounded-full px-3 py-1 text-sm font-bold lg:text-base ${TALLY_STYLE[ev]}`}>
+          <span aria-hidden>{EVALUATION_LABELS[ev].icon} </span>
+          {ev === 'match' ? 'Matches' : EVALUATION_LABELS[ev].label}: {tally[ev]}
+        </li>
+      ))}
+    </ul>
   );
 }
