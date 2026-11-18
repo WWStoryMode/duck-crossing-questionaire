@@ -143,3 +143,7 @@ scripts/  check-content.ts · smoke.ts
 ```
 
 Stack: React 18, TypeScript, Vite, Tailwind CSS, Express, Socket.IO, qrcode.react.
+
+## Licence
+
+[MIT](LICENSE) © 2026 William Wong
