@@ -1,7 +1,7 @@
 # Duck Crossing — Pedagogy & Game-Based Learning
 
 A small real-time classroom activity for a 15-minute microteaching session.
-Four tables of students match game mechanics from an unfinished learning game, **Duck Crossing**, to two learning outcomes (A and B). The teacher watches responses arrive live, locks submissions, reveals suggested matches and leads the discussion from a projector view.
+Four tables of students match game mechanics from an unfinished learning game, **Duck Crossing**, to two learning outcomes (A and B). The teacher watches responses arrive live, locks submissions, reveals suggested matches and leads the discussion from a projector view, or runs the **whole lesson from one browser tab** with the built-in presentation at `/present`.
 
 - **Students** open a URL or scan a QR code. They don't install anything or create accounts.
 - **Nothing is stored.** All data lives in the memory of one Node.js process and disappears when you click *Reset all* or restart the server.
@@ -11,6 +11,7 @@ Four tables of students match game mechanics from an unfinished learning game, *
 | `/` | Students | Pick a table, classify six mechanic cards (A only / B only / Both / Neither), explain one debatable card, submit and revise |
 | `/teacher` | Teacher (access code) | Live responses per table, justifications, lock/unlock, reveal/hide, reset, demo mode, QR code |
 | `/results` | Projector | One table at a time: bar charts of group answers; after reveal, suggested answers, alternatives and explanations |
+| `/present` | Teacher on the projector | 8-slide lesson, *Pedagogy and Game-Based Learning*, with the join QR, live results, reveal/lock, presenter notes and timers |
 
 ---
 
@@ -101,7 +102,65 @@ Put nginx or Caddy in front for HTTPS. Make sure WebSocket upgrade headers are f
 
 ---
 
-## Running the session
+## Presenting the lesson (`/present`)
+
+`/present` is a 16:9 slide presentation built into the app. It shares the same live session as the questionnaire, so you can teach the whole 15-minute lesson without switching between PowerPoint, the dashboard and the results page. Open it from **Open presentation ↗** on `/teacher`, or go to `/present` directly.
+
+| # | Slide | Time |
+|---|---|---|
+| 1 | Pedagogy and Game-Based Learning: opening question | 1:30 |
+| 2 | What are we learning today? | 1:00 |
+| 3 | From Learning Outcomes to Game Mechanics (diagram, Bloom's) | 1:00 |
+| 4 | Duck Crossing: A Game in Development | 1:00 |
+| 5 | Which Mechanics Support Learning? **QR code + 4-minute activity countdown** | 4:45 |
+| 6 | What Did We Choose, and Why? **live results + reveal/lock** | 2:45 |
+| 7 | How Do We Know Learning Has Happened? (reveals step by step) | 1:30 |
+| 8 | Engagement Is Not Evidence of Learning | 0:45 |
+
+### Controls
+
+| Key | Action |
+|---|---|
+| **→**, **Space**, PageDown | Next slide (on slide 7, reveals the next point first) |
+| **←**, PageUp | Previous slide |
+| **Home** / **End** | First / last slide |
+| **1–4** (slide 6) | Switch table |
+| **F** | Fullscreen (Esc exits) |
+| **O** | Slide overview |
+| **N** | Presenter notes |
+
+Slides never advance on their own. Keys are ignored while you type in a field or use the table tabs. The slide number is kept in the URL (`/present#/5`), so a refresh stays on the same slide. In fullscreen, the control bar fades after 3 seconds of inactivity and returns when you move the mouse.
+
+### Teacher controls
+
+Click **🔑 Sign in** and enter the same access code as `/teacher`. Slide 6 then shows **Lock submissions** and **Reveal answers**, using the same server-side controls as the dashboard. Before sign-in, no teacher controls are shown, and answers are never sent to any page until you reveal them. The **Menu** opens the dashboard, questionnaire and results in new tabs, so the presentation keeps its connection and timers.
+
+### Timers
+
+- **Session timer** (control bar): elapsed and remaining time of 15:00, with start/pause/reset. It turns yellow when you run over.
+- **Activity countdown** (slide 5): 4:00, started manually. It stays visible on every slide while it runs. At zero it shows *Time's up* but **does not lock submissions**; you lock when you're ready.
+
+Both timers belong to this browser tab only. Refreshing the page resets them, but never touches student submissions.
+
+### Presenter notes
+
+Press **N** for notes on the current slide: suggested time, key points, questions to ask, likely misconceptions and a transition. They're hidden by default. On a single screen the panel shows on the projector while open, so open it only when you need it, or present from a second tab on your laptop screen. Notes never contain answer-key content. Edit them in `src/components/presentation/notes.ts`; slide text lives in `src/components/presentation/content.tsx`.
+
+### If the connection drops
+
+The slides, notes and timers keep working because they're already loaded. The control bar shows **○ Offline**, and slide 6 keeps the last results it received with a *Disconnected* banner. The page reconnects by itself and resyncs from server memory. Nothing is ever reset by moving between slides.
+
+### Suggested running order
+
+1. Before class: on `/teacher`, add demo responses, run through `/present` (including Reveal on slide 6), then **Reset all**.
+2. Open `/present`, sign in, press **F** for fullscreen, and start the session timer.
+3. Slide 5: groups scan the QR code; press **▶ Start 4:00**.
+4. Slide 6: **Lock submissions**, discuss a split card, **Reveal answers**, then step through tables with **1–4**.
+5. Finish on slides 7–8.
+
+---
+
+## Running the session (dashboard only)
 
 1. **Before class:** open `/teacher`, click **+ Add 4 demo responses** and check `/results` and **Reveal**. Then click **Reset all**.
 2. **Start:** show the QR code (*Show large QR*) and ask each group to choose its table.
@@ -138,7 +197,8 @@ The answer key, accepted alternatives and explanations live in `shared/content.t
 ```
 shared/   content.ts (tables, cards, key, explanations) · evaluate.ts · types.ts
 server/   index.ts (Express, static files, login, join URL) · sockets.ts (Socket.IO events) · store.ts (in-memory session)
-src/      pages/ (Landing, Activity, Teacher, Results) · components/ (AnswerPicker, BarChart, JoinQR, …)
+src/      pages/ (Landing, Activity, Teacher, Results, Presentation) · components/ (AnswerPicker, BarChart, ResultsCard, JoinQR, …)
+          components/presentation/ (slides.tsx registry, content.tsx slides, notes.ts, LiveResultsSlide, timers, controls)
 scripts/  check-content.ts · smoke.ts
 ```
 
