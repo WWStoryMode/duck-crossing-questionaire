@@ -5,6 +5,11 @@ import type { TableId } from '../../../shared/types.js';
 export interface PresentationCtx {
   liveTable: TableId;
   setLiveTable: (t: TableId) => void;
+  /** Signed in with the existing teacher access code (token held in page memory). */
+  teacherAuthed: boolean;
+  requestSignIn: () => void;
+  /** Call when the server rejects the token (e.g. after a restart). */
+  onAuthLost: () => void;
 }
 
 export const PresentationContext = createContext<PresentationCtx | null>(null);

@@ -9,6 +9,8 @@ import { usePublicState } from '../socket';
 import { isInteractiveTarget } from '../components/presentation/keys';
 import { PresentationContext } from '../components/presentation/context';
 import type { TableId } from '../../shared/types.js';
+import { SignInDialog } from '../components/presentation/SignInDialog';
+import { useTeacherState } from '../teacher';
 
 type Pos = { index: number; step: number };
 
@@ -64,6 +66,22 @@ export function Presentation() {
   const [overview, setOverview] = useState(false);
   const [notesOpen, setNotesOpen] = useState(false);
   const [liveTable, setLiveTable] = useState<TableId>(1);
+  const [teacherAuthed, setTeacherAuthed] = useState(false);
+  const [signIn, setSignIn] = useState<{ message?: string } | null>(null);
+  const { expired } = useTeacherState();
+
+  // Server forgot our token (e.g. restart): drop teacher controls and ask again.
+  useEffect(() => {
+    if (expired && teacherAuthed) {
+      setTeacherAuthed(false);
+      setSignIn({ message: 'Your teacher session expired (the server may have restarted). Please enter the code again.' });
+    }
+  }, [expired, teacherAuthed]);
+  const requestSignIn = useCallback(() => setSignIn({}), []);
+  const onAuthLost = useCallback(() => {
+    setTeacherAuthed(false);
+    setSignIn({ message: 'Teacher session expired. Please enter the code again.' });
+  }, []);
   const { isFs, toggle: toggleFs } = useFullscreen();
   const idle = useIdle(isFs);
   const footerRef = useRef<HTMLElement>(null);
@@ -110,7 +128,7 @@ export function Presentation() {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.metaKey || e.ctrlKey || e.altKey || isInteractiveTarget(e)) return;
-      if (overview) return;
+      if (overview || signIn) return;
       switch (e.key) {
         case 'f':
         case 'F':
@@ -147,12 +165,12 @@ export function Presentation() {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [next, prev, goTo, overview, toggleFs]);
+  }, [next, prev, goTo, overview, signIn, toggleFs]);
 
   const slide = SLIDES[pos.index];
 
   return (
-    <PresentationContext.Provider value={{ liveTable, setLiveTable }}>
+    <PresentationContext.Provider value={{ liveTable, setLiveTable, teacherAuthed, requestSignIn, onAuthLost }}>
       <div className="relative flex h-screen flex-col overflow-hidden bg-[#EFE9DC]">
         <h1 className="sr-only">Duck Crossing presentation</h1>
         <div className="flex min-h-0 flex-1">
@@ -185,9 +203,26 @@ export function Presentation() {
             >
               {connected ? '● Live' : '○ Offline — reconnecting…'}
             </span>
+            {teacherAuthed ? (
+              <span className="rounded-full bg-navy px-3 py-1 text-xs font-bold text-paper">✓ Teacher</span>
+            ) : (
+              <button type="button" className="ctl-btn" onClick={requestSignIn}>
+                🔑 Sign in
+              </button>
+            )}
             <NavMenu />
           </SlideControls>
         </footer>
+        {signIn && (
+          <SignInDialog
+            message={signIn.message}
+            onClose={() => setSignIn(null)}
+            onSuccess={() => {
+              setTeacherAuthed(true);
+              setSignIn(null);
+            }}
+          />
+        )}
         {overview && (
           <Overview
             current={pos.index}

@@ -7,6 +7,7 @@ import { TableTabs } from '../TableTabs';
 import { usePublicState } from '../../socket';
 import { usePresentation } from './context';
 import { isInteractiveTarget } from './keys';
+import { TeacherControls } from './TeacherControls';
 
 /**
  * Slide 6: live answers from the existing Socket.IO public state (same data as /results).
@@ -43,8 +44,12 @@ export function LiveResultsSlide() {
 
       <div className="mt-[1cqw] flex flex-wrap items-center gap-[1cqw]">
         <TableTabs value={liveTable} onChange={setLiveTable} idPrefix="live-tab" />
-        <span className="s-tiny text-navy-light">Keys 1–4 switch tables</span>
+        <span className="s-tiny text-navy-light">Keys 1–4</span>
+        <div className="ml-auto text-sm">
+          <TeacherControls />
+        </div>
       </div>
+      {state?.locked && <p className="s-tiny mt-[0.5cqw] font-bold">🔒 Submissions are locked.</p>}
 
       {!connected && (
         <p role="status" className="s-small mt-[0.8cqw] rounded-[0.8cqw] bg-sun px-[1.2cqw] py-[0.5cqw] font-bold">

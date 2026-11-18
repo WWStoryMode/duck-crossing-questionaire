@@ -5,6 +5,9 @@ import { emitAck, socket } from './socket';
 /** Teacher session token: kept in page memory only. */
 let token: string | null = null;
 
+/** Notifies hooks when a login succeeds (so an earlier "expired" state clears). */
+const loginEvents = new EventTarget();
+
 export async function login(code: string): Promise<{ ok: true } | { ok: false; error: string }> {
   try {
     const res = await fetch('/api/teacher/login', {
@@ -17,7 +20,9 @@ export async function login(code: string): Promise<{ ok: true } | { ok: false; e
     token = body.token;
     socket.auth = { token }; // future reconnects authenticate automatically
     const ack = await emitAck<{ ok: boolean; error?: string }>('teacher:auth', token);
-    return ack.ok ? { ok: true } : { ok: false, error: ack.error || 'Not authorised.' };
+    if (!ack.ok) return { ok: false, error: ack.error || 'Not authorised.' };
+    loginEvents.dispatchEvent(new Event('login'));
+    return { ok: true };
   } catch {
     return { ok: false, error: 'Could not reach the server.' };
   }
@@ -38,9 +43,12 @@ export function useTeacherState() {
         /* will retry on next connect */
       }
     };
+    const onLogin = () => setExpired(false);
     socket.on('state:teacher', onState);
     socket.on('connect', onConnect);
+    loginEvents.addEventListener('login', onLogin);
     return () => {
+      loginEvents.removeEventListener('login', onLogin);
       socket.off('state:teacher', onState);
       socket.off('connect', onConnect);
     };
