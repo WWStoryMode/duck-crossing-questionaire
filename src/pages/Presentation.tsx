@@ -4,6 +4,7 @@ import { Stage } from '../components/presentation/Slide';
 import { SlideControls } from '../components/presentation/SlideControls';
 import { Overview } from '../components/presentation/Overview';
 import { NavMenu } from '../components/presentation/NavMenu';
+import { PresenterNotes } from '../components/presentation/PresenterNotes';
 import { usePublicState } from '../socket';
 
 type Pos = { index: number; step: number };
@@ -67,6 +68,7 @@ function useIdle(enabled: boolean, ms = 3000) {
 export function Presentation() {
   const [pos, setPos] = useState<Pos>(readHash);
   const [overview, setOverview] = useState(false);
+  const [notesOpen, setNotesOpen] = useState(false);
   const { isFs, toggle: toggleFs } = useFullscreen();
   const idle = useIdle(isFs);
   const footerRef = useRef<HTMLElement>(null);
@@ -123,6 +125,10 @@ export function Presentation() {
         case 'O':
           setOverview(true);
           break;
+        case 'n':
+        case 'N':
+          setNotesOpen((v) => !v);
+          break;
         case 'ArrowRight':
         case 'PageDown':
         case ' ':
@@ -153,9 +159,12 @@ export function Presentation() {
   return (
     <div className="relative flex h-screen flex-col overflow-hidden bg-[#EFE9DC]">
       <h1 className="sr-only">Duck Crossing presentation</h1>
-      <main className="stage-area flex flex-1 items-center justify-center">
-        <Stage label={`Slide ${pos.index + 1} of ${SLIDES.length}: ${slide.title}`}>{slide.render({ step: pos.step })}</Stage>
-      </main>
+      <div className="flex min-h-0 flex-1">
+        <main className="stage-area flex min-w-0 flex-1 items-center justify-center">
+          <Stage label={`Slide ${pos.index + 1} of ${SLIDES.length}: ${slide.title}`}>{slide.render({ step: pos.step })}</Stage>
+        </main>
+        {notesOpen && <PresenterNotes slide={slide} index={pos.index} onClose={() => setNotesOpen(false)} />}
+      </div>
       <footer
         ref={footerRef}
         className={`flex flex-wrap items-center justify-center gap-2 px-3 py-2 text-navy transition-opacity duration-300 ${
@@ -167,6 +176,9 @@ export function Presentation() {
         <SlideControls index={pos.index} step={pos.step} onPrev={prev} onNext={next}>
           <button type="button" className="ctl-btn" onClick={() => setOverview(true)} aria-keyshortcuts="O">
             ▦ Overview
+          </button>
+          <button type="button" className="ctl-btn" onClick={() => setNotesOpen((v) => !v)} aria-pressed={notesOpen} aria-keyshortcuts="N">
+            ✎ Notes
           </button>
           <button type="button" className="ctl-btn" onClick={toggleFs} aria-pressed={isFs} aria-keyshortcuts="F">
             {isFs ? '⤡ Exit fullscreen' : '⤢ Fullscreen'}

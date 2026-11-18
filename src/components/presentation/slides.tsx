@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { SlideLayout } from './Slide';
+import { NOTES } from './notes';
 import {
   ActivitySlide,
   ConclusionSlide,
@@ -44,6 +45,8 @@ export const SLIDES: SlideDef[] = [
   { id: 'evidence', title: 'How Do We Know Learning Has Happened?', seconds: 90, steps: EVIDENCE_STEPS, render: ({ step }) => <EvidenceSlide step={step} /> },
   { id: 'conclusion', title: 'Engagement Is Not Evidence of Learning', seconds: 45, render: () => <ConclusionSlide /> },
 ];
+
+for (const slide of SLIDES) slide.notes = NOTES[slide.id];
 
 export const TOTAL_SECONDS = SLIDES.reduce((n, s) => n + s.seconds, 0);
 
