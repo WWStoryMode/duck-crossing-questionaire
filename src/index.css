@@ -8,3 +8,32 @@ body { background: #FBF8F1; color: #1B2A41; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
 }
+
+/* ---------- Presentation (/present) ----------
+   The stage is a 16:9 box fitted to the viewport; slide type is sized in
+   container-query units (cqw) so it scales to any projector resolution. */
+.stage-area { container-type: size; min-height: 0; }
+.stage {
+  width: min(100cqw, calc(100cqh * 16 / 9));
+  aspect-ratio: 16 / 9;
+  container-type: inline-size;
+  background: #FBF8F1;
+  overflow: hidden;
+  position: relative;
+}
+.s-kicker { font-size: 1.5cqw; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; }
+.s-title  { font-size: 4.4cqw; font-weight: 800; line-height: 1.1; letter-spacing: -0.01em; }
+.s-h2     { font-size: 3.2cqw; font-weight: 800; line-height: 1.15; }
+.s-lead   { font-size: 2.5cqw; line-height: 1.35; }
+.s-body   { font-size: 2cqw;   line-height: 1.4; }
+.s-small  { font-size: 1.55cqw; line-height: 1.4; }
+.s-tiny   { font-size: 1.2cqw; line-height: 1.4; }
+.s-pad    { padding: 4cqw 5cqw 7cqw; }
+
+.ctl-btn {
+  border-radius: 0.6rem; border: 2px solid #1B2A41; background: #fff; color: #1B2A41;
+  padding: 0.35rem 0.75rem; font-weight: 700; white-space: nowrap;
+}
+.ctl-btn:hover:not(:disabled) { background: #FBEFCB; }
+.ctl-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.ctl-btn[aria-pressed="true"] { background: #1B2A41; color: #FBF8F1; }

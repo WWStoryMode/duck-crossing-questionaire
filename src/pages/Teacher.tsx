@@ -91,6 +91,9 @@ function Dashboard({ onExpired }: { onExpired: () => void }) {
           >
             {connected ? '● Live' : 'Reconnecting…'}
           </span>
+          <a href="/present" target="_blank" rel="noopener" className="rounded-lg bg-navy px-3 py-1 font-bold text-paper">
+            Open presentation ↗
+          </a>
           <a href="/results" target="_blank" rel="noreferrer" className="rounded-lg border-2 border-navy px-3 py-1 font-bold">
             Open projector view ↗
           </a>
