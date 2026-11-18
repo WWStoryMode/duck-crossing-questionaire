@@ -39,3 +39,4 @@ body { background: #FBF8F1; color: #1B2A41; }
 .ctl-btn:hover:not(:disabled) { background: #FBEFCB; }
 .ctl-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 .ctl-btn[aria-pressed="true"] { background: #1B2A41; color: #FBF8F1; }
+.ctl-btn[aria-pressed="true"]:hover:not(:disabled) { background: #3A4A63; }

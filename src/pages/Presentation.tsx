@@ -176,9 +176,9 @@ export function Presentation() {
   return (
     <PresentationContext.Provider value={{ liveTable, setLiveTable, teacherAuthed, requestSignIn, onAuthLost, activityTimer }}>
       <div className="relative flex h-screen flex-col overflow-hidden bg-[#EFE9DC]">
-        <h1 className="sr-only">Duck Crossing presentation</h1>
         <div className="flex min-h-0 flex-1">
           <main className="stage-area flex min-w-0 flex-1 items-center justify-center">
+            <h1 className="sr-only">Duck Crossing presentation</h1>
             <Stage label={`Slide ${pos.index + 1} of ${SLIDES.length}: ${slide.title}`}>{slide.render({ step: pos.step })}</Stage>
           </main>
           {notesOpen && <PresenterNotes slide={slide} index={pos.index} onClose={() => setNotesOpen(false)} />}
