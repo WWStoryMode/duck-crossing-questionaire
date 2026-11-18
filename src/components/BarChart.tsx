@@ -9,6 +9,25 @@ type Props = {
   /** After reveal: which answers to mark. */
   markFor?: (a: Answer) => BarMark;
   labelledBy?: string;
+  /** 'slide' sizes everything relative to the presentation stage. */
+  size?: 'page' | 'slide';
+};
+
+const SIZES = {
+  page: {
+    list: 'space-y-1.5',
+    row: 'grid-cols-[5.5rem_1fr_2.5rem] gap-2 rounded-lg px-1.5 py-1 lg:grid-cols-[7rem_1fr_3rem]',
+    label: 'text-sm font-bold lg:text-lg',
+    bar: 'h-6 lg:h-8',
+    count: 'text-base font-extrabold lg:text-xl',
+  },
+  slide: {
+    list: 'space-y-[0.35cqw]',
+    row: 'grid-cols-[6.5cqw_1fr_2.4cqw] gap-[0.6cqw] rounded-[0.5cqw] px-[0.4cqw] py-[0.2cqw]',
+    label: 's-tiny font-bold',
+    bar: 'h-[1.4cqw]',
+    count: 's-small font-extrabold',
+  },
 };
 
 const DEMO_TEXTURE =
@@ -19,10 +38,11 @@ const DEMO_TEXTURE =
  * real responses = solid ink fill, demo responses = hatched texture of the same ink,
  * separated by a 2px gap. Every bar carries its count and label as text.
  */
-export function BarChart({ counts, max, markFor, labelledBy }: Props) {
+export function BarChart({ counts, max, markFor, labelledBy, size = 'page' }: Props) {
   const denom = Math.max(max, 1);
+  const sz = SIZES[size];
   return (
-    <ul className="space-y-1.5" aria-labelledby={labelledBy}>
+    <ul className={sz.list} aria-labelledby={labelledBy}>
       {ANSWERS.map((a) => {
         const { real, demo } = counts[a];
         const total = real + demo;
@@ -33,15 +53,15 @@ export function BarChart({ counts, max, markFor, labelledBy }: Props) {
             key={a}
             title={tip}
             aria-label={tip + (mark === 'preferred' ? ', suggested answer' : mark === 'alternative' ? ', also defensible' : '')}
-            className={`grid grid-cols-[5.5rem_1fr_2.5rem] items-center gap-2 rounded-lg px-1.5 py-1 lg:grid-cols-[7rem_1fr_3rem] ${
+            className={`grid items-center ${sz.row} ${
               mark === 'preferred' ? 'bg-moss-light ring-[3px] ring-moss' : mark === 'alternative' ? 'bg-sun-light ring-2 ring-sun' : ''
             }`}
           >
-            <span className="text-sm font-bold lg:text-lg">
+            <span className={sz.label}>
               {mark === 'preferred' && <span aria-hidden>★ </span>}
               {ANSWER_LABELS[a]}
             </span>
-            <span className="flex h-6 items-center gap-[2px] lg:h-8" aria-hidden>
+            <span className={`flex items-center gap-[2px] ${sz.bar}`} aria-hidden>
               {real > 0 && (
                 <span className="h-full rounded-r-[4px] bg-navy-light" style={{ width: `${(real / denom) * 100}%` }} />
               )}
@@ -53,7 +73,7 @@ export function BarChart({ counts, max, markFor, labelledBy }: Props) {
               )}
               {total === 0 && <span className="h-full w-[2px] bg-navy/20" />}
             </span>
-            <span className="text-right text-base font-extrabold tabular-nums lg:text-xl">{total}</span>
+            <span className={`text-right tabular-nums ${sz.count}`}>{total}</span>
           </li>
         );
       })}

@@ -1,11 +1,12 @@
-import { useState, type FormEvent } from 'react';
+import { useState } from 'react';
 import { TABLE_IDS, type TableId } from '../../shared/types.js';
 import { JoinQR } from '../components/JoinQR';
 import { TableTabs } from '../components/TableTabs';
 import { TeacherTable } from '../components/TeacherTable';
 import { Duck } from '../components/Duck';
 import { usePublicState } from '../socket';
-import { login, teacherAction, useTeacherState } from '../teacher';
+import { teacherAction, useTeacherState } from '../teacher';
+import { TeacherLoginForm } from '../components/TeacherLogin';
 
 export function Teacher() {
   const [authed, setAuthed] = useState(false);
@@ -14,37 +15,11 @@ export function Teacher() {
 }
 
 function Login({ onSuccess, message }: { onSuccess: () => void; message?: string }) {
-  const [code, setCode] = useState('');
-  const [error, setError] = useState(message ?? '');
-  const [busy, setBusy] = useState(false);
-  const submit = async (e: FormEvent) => {
-    e.preventDefault();
-    setBusy(true);
-    const r = await login(code);
-    setBusy(false);
-    if (r.ok) onSuccess();
-    else setError(r.error);
-  };
   return (
     <main className="mx-auto flex min-h-screen max-w-sm flex-col justify-center px-4">
       <Duck className="mx-auto h-16 w-20" />
       <h1 className="mt-4 text-center text-3xl font-extrabold">Teacher dashboard</h1>
-      <form onSubmit={submit} className="mt-6 space-y-3">
-        <label htmlFor="code" className="block font-bold">Access code</label>
-        <input
-          id="code"
-          type="password"
-          autoFocus
-          autoComplete="off"
-          value={code}
-          onChange={(e) => setCode(e.target.value)}
-          className="block w-full rounded-xl border-2 border-navy/20 bg-white px-4 py-3 text-lg focus:border-navy"
-        />
-        {error && <p role="alert" className="rounded-lg bg-sun-light px-3 py-2 font-semibold">⚠ {error}</p>}
-        <button disabled={busy || !code} className="w-full rounded-xl bg-navy px-4 py-3 text-lg font-bold text-paper disabled:opacity-50">
-          {busy ? 'Checking…' : 'Enter'}
-        </button>
-      </form>
+      <TeacherLoginForm onSuccess={onSuccess} message={message} />
     </main>
   );
 }

@@ -6,6 +6,13 @@ import { Overview } from '../components/presentation/Overview';
 import { NavMenu } from '../components/presentation/NavMenu';
 import { PresenterNotes } from '../components/presentation/PresenterNotes';
 import { usePublicState } from '../socket';
+import { isInteractiveTarget } from '../components/presentation/keys';
+import { PresentationContext } from '../components/presentation/context';
+import type { TableId } from '../../shared/types.js';
+import { SignInDialog } from '../components/presentation/SignInDialog';
+import { useTeacherState } from '../teacher';
+import { useTimer } from '../components/presentation/useTimer';
+import { ACTIVITY_MS, ActivityPill, SessionTimer } from '../components/presentation/PresentationTimer';
 
 type Pos = { index: number; step: number };
 
@@ -18,15 +25,6 @@ function readHash(): Pos {
   const n = Number(window.location.hash.replace(/^#\/?/, ''));
   const index = Number.isInteger(n) && n >= 1 && n <= SLIDES.length ? n - 1 : 0;
   return { index, step: 0 };
-}
-
-/** Keys typed into form fields, tab lists, radio groups or dialogs belong to those controls. */
-export function isInteractiveTarget(e: KeyboardEvent) {
-  const t = e.target as HTMLElement | null;
-  if (!t?.closest) return false;
-  if (t.closest('input, textarea, select, [contenteditable="true"], [role="tablist"], [role="radiogroup"], [role="dialog"], [role="menu"]')) return true;
-  if ((e.key === ' ' || e.key === 'Enter') && t.closest('button, a, summary')) return true;
-  return false;
 }
 
 function useFullscreen() {
@@ -69,6 +67,25 @@ export function Presentation() {
   const [pos, setPos] = useState<Pos>(readHash);
   const [overview, setOverview] = useState(false);
   const [notesOpen, setNotesOpen] = useState(false);
+  const [liveTable, setLiveTable] = useState<TableId>(1);
+  const [teacherAuthed, setTeacherAuthed] = useState(false);
+  const [signIn, setSignIn] = useState<{ message?: string } | null>(null);
+  const { expired } = useTeacherState();
+  const sessionTimer = useTimer();
+  const activityTimer = useTimer(ACTIVITY_MS);
+
+  // Server forgot our token (e.g. restart): drop teacher controls and ask again.
+  useEffect(() => {
+    if (expired && teacherAuthed) {
+      setTeacherAuthed(false);
+      setSignIn({ message: 'Your teacher session expired (the server may have restarted). Please enter the code again.' });
+    }
+  }, [expired, teacherAuthed]);
+  const requestSignIn = useCallback(() => setSignIn({}), []);
+  const onAuthLost = useCallback(() => {
+    setTeacherAuthed(false);
+    setSignIn({ message: 'Teacher session expired. Please enter the code again.' });
+  }, []);
   const { isFs, toggle: toggleFs } = useFullscreen();
   const idle = useIdle(isFs);
   const footerRef = useRef<HTMLElement>(null);
@@ -115,7 +132,7 @@ export function Presentation() {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.metaKey || e.ctrlKey || e.altKey || isInteractiveTarget(e)) return;
-      if (overview) return;
+      if (overview || signIn) return;
       switch (e.key) {
         case 'f':
         case 'F':
@@ -152,56 +169,78 @@ export function Presentation() {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [next, prev, goTo, overview, toggleFs]);
+  }, [next, prev, goTo, overview, signIn, toggleFs]);
 
   const slide = SLIDES[pos.index];
 
   return (
-    <div className="relative flex h-screen flex-col overflow-hidden bg-[#EFE9DC]">
-      <h1 className="sr-only">Duck Crossing presentation</h1>
-      <div className="flex min-h-0 flex-1">
-        <main className="stage-area flex min-w-0 flex-1 items-center justify-center">
-          <Stage label={`Slide ${pos.index + 1} of ${SLIDES.length}: ${slide.title}`}>{slide.render({ step: pos.step })}</Stage>
-        </main>
-        {notesOpen && <PresenterNotes slide={slide} index={pos.index} onClose={() => setNotesOpen(false)} />}
+    <PresentationContext.Provider value={{ liveTable, setLiveTable, teacherAuthed, requestSignIn, onAuthLost, activityTimer }}>
+      <div className="relative flex h-screen flex-col overflow-hidden bg-[#EFE9DC]">
+        <h1 className="sr-only">Duck Crossing presentation</h1>
+        <div className="flex min-h-0 flex-1">
+          <main className="stage-area flex min-w-0 flex-1 items-center justify-center">
+            <Stage label={`Slide ${pos.index + 1} of ${SLIDES.length}: ${slide.title}`}>{slide.render({ step: pos.step })}</Stage>
+          </main>
+          {notesOpen && <PresenterNotes slide={slide} index={pos.index} onClose={() => setNotesOpen(false)} />}
+        </div>
+        <footer
+          ref={footerRef}
+          className={`flex flex-wrap items-center justify-center gap-2 px-3 py-2 text-navy transition-opacity duration-300 ${
+            isFs
+              ? `absolute inset-x-0 bottom-0 bg-paper/90 hover:opacity-100 has-[:focus-visible]:opacity-100 ${idle ? 'opacity-0' : 'opacity-100'}`
+              : 'border-t border-navy/10 bg-paper'
+          }`}
+        >
+          <SlideControls index={pos.index} step={pos.step} onPrev={prev} onNext={next}>
+            <SessionTimer timer={sessionTimer} />
+            <ActivityPill timer={activityTimer} />
+            <button type="button" className="ctl-btn" onClick={() => setOverview(true)} aria-keyshortcuts="O" aria-label="Slide overview" title="Slide overview (O)">
+              ▦<span className="hidden 2xl:inline"> Overview</span>
+            </button>
+            <button type="button" className="ctl-btn" onClick={() => setNotesOpen((v) => !v)} aria-pressed={notesOpen} aria-keyshortcuts="N">
+              ✎ Notes
+            </button>
+            <button type="button" className="ctl-btn" onClick={toggleFs} aria-pressed={isFs} aria-keyshortcuts="F" aria-label="Fullscreen" title="Fullscreen (F)">
+              {isFs ? '⤡' : '⤢'}<span className="hidden 2xl:inline">{isFs ? ' Exit fullscreen' : ' Fullscreen'}</span>
+            </button>
+            <span
+              role="status"
+              title={connected ? 'Connected to the classroom server' : 'Disconnected — reconnecting automatically'}
+              className={`rounded-full px-3 py-1 text-xs font-bold ${connected ? 'bg-moss-light' : 'bg-sun'}`}
+            >
+              {connected ? '● Live' : '○ Offline'}
+            </span>
+            {teacherAuthed ? (
+              <span className="rounded-full bg-navy px-3 py-1 text-xs font-bold text-paper">✓ Teacher</span>
+            ) : (
+              <button type="button" className="ctl-btn" onClick={requestSignIn}>
+                🔑 Sign in
+              </button>
+            )}
+            <NavMenu />
+          </SlideControls>
+        </footer>
+        {signIn && (
+          <SignInDialog
+            message={signIn.message}
+            onClose={() => setSignIn(null)}
+            onSuccess={() => {
+              setTeacherAuthed(true);
+              setSignIn(null);
+            }}
+          />
+        )}
+        {overview && (
+          <Overview
+            current={pos.index}
+            onPick={(i) => {
+              goTo(i);
+              setOverview(false);
+            }}
+            onClose={() => setOverview(false)}
+          />
+        )}
       </div>
-      <footer
-        ref={footerRef}
-        className={`flex flex-wrap items-center justify-center gap-2 px-3 py-2 text-navy transition-opacity duration-300 ${
-          isFs
-            ? `absolute inset-x-0 bottom-0 bg-paper/90 hover:opacity-100 has-[:focus-visible]:opacity-100 ${idle ? 'opacity-0' : 'opacity-100'}`
-            : 'border-t border-navy/10 bg-paper'
-        }`}
-      >
-        <SlideControls index={pos.index} step={pos.step} onPrev={prev} onNext={next}>
-          <button type="button" className="ctl-btn" onClick={() => setOverview(true)} aria-keyshortcuts="O">
-            ▦ Overview
-          </button>
-          <button type="button" className="ctl-btn" onClick={() => setNotesOpen((v) => !v)} aria-pressed={notesOpen} aria-keyshortcuts="N">
-            ✎ Notes
-          </button>
-          <button type="button" className="ctl-btn" onClick={toggleFs} aria-pressed={isFs} aria-keyshortcuts="F">
-            {isFs ? '⤡ Exit fullscreen' : '⤢ Fullscreen'}
-          </button>
-          <span
-            role="status"
-            className={`rounded-full px-3 py-1 text-xs font-bold ${connected ? 'bg-moss-light' : 'bg-sun'}`}
-          >
-            {connected ? '● Live' : '○ Offline — reconnecting…'}
-          </span>
-          <NavMenu />
-        </SlideControls>
-      </footer>
-      {overview && (
-        <Overview
-          current={pos.index}
-          onPick={(i) => {
-            goTo(i);
-            setOverview(false);
-          }}
-          onClose={() => setOverview(false)}
-        />
-      )}
-    </div>
+    </PresentationContext.Provider>
   );
 }
