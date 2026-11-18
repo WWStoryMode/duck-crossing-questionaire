@@ -63,6 +63,7 @@ export const NOTES: Record<string, SlideNotes> = {
       'Reveal, then discuss: suggested answers are pedagogical interpretations, not the “right” answers.',
       'Use “open for discussion” answers as prompts, not corrections.',
       'With only one group on a table, ask that group to talk through their choices.',
+      'Keys 1–4 switch tables. After reveal the cards scroll — use the mouse wheel or trackpad.',
     ],
     questions: ['Where did tables disagree, and what assumption caused it?', 'What would change your mind?'],
     transition: '“Agreeing on a match is still only a claim. How would we know it works?”',

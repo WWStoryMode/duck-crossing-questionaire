@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
-import { SlideLayout } from './Slide';
 import { NOTES } from './notes';
+import { LiveResultsSlide } from './LiveResultsSlide';
 import {
   ActivitySlide,
   ConclusionSlide,
@@ -33,15 +33,13 @@ export interface SlideDef {
   notes?: SlideNotes;
 }
 
-const placeholder = (title: string) => () => <SlideLayout title={title} />;
-
 export const SLIDES: SlideDef[] = [
   { id: 'opening', title: 'Pedagogy and Game-Based Learning', seconds: 90, render: () => <OpeningSlide /> },
   { id: 'outcome', title: 'What are we learning today?', seconds: 60, render: () => <OutcomeSlide /> },
   { id: 'mechanics', title: 'From Learning Outcomes to Game Mechanics', seconds: 60, render: () => <MechanicsSlide /> },
   { id: 'game', title: 'Duck Crossing: A Game in Development', seconds: 60, render: () => <GameSlide /> },
   { id: 'activity', title: 'Which Mechanics Support Learning?', seconds: 285, render: () => <ActivitySlide /> },
-  { id: 'results', title: 'What Did We Choose, and Why?', seconds: 165, render: placeholder('What Did We Choose, and Why?') },
+  { id: 'results', title: 'What Did We Choose, and Why?', seconds: 165, render: () => <LiveResultsSlide /> },
   { id: 'evidence', title: 'How Do We Know Learning Has Happened?', seconds: 90, steps: EVIDENCE_STEPS, render: ({ step }) => <EvidenceSlide step={step} /> },
   { id: 'conclusion', title: 'Engagement Is Not Evidence of Learning', seconds: 45, render: () => <ConclusionSlide /> },
 ];

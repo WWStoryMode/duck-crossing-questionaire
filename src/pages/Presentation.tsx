@@ -6,6 +6,9 @@ import { Overview } from '../components/presentation/Overview';
 import { NavMenu } from '../components/presentation/NavMenu';
 import { PresenterNotes } from '../components/presentation/PresenterNotes';
 import { usePublicState } from '../socket';
+import { isInteractiveTarget } from '../components/presentation/keys';
+import { PresentationContext } from '../components/presentation/context';
+import type { TableId } from '../../shared/types.js';
 
 type Pos = { index: number; step: number };
 
@@ -18,15 +21,6 @@ function readHash(): Pos {
   const n = Number(window.location.hash.replace(/^#\/?/, ''));
   const index = Number.isInteger(n) && n >= 1 && n <= SLIDES.length ? n - 1 : 0;
   return { index, step: 0 };
-}
-
-/** Keys typed into form fields, tab lists, radio groups or dialogs belong to those controls. */
-export function isInteractiveTarget(e: KeyboardEvent) {
-  const t = e.target as HTMLElement | null;
-  if (!t?.closest) return false;
-  if (t.closest('input, textarea, select, [contenteditable="true"], [role="tablist"], [role="radiogroup"], [role="dialog"], [role="menu"]')) return true;
-  if ((e.key === ' ' || e.key === 'Enter') && t.closest('button, a, summary')) return true;
-  return false;
 }
 
 function useFullscreen() {
@@ -69,6 +63,7 @@ export function Presentation() {
   const [pos, setPos] = useState<Pos>(readHash);
   const [overview, setOverview] = useState(false);
   const [notesOpen, setNotesOpen] = useState(false);
+  const [liveTable, setLiveTable] = useState<TableId>(1);
   const { isFs, toggle: toggleFs } = useFullscreen();
   const idle = useIdle(isFs);
   const footerRef = useRef<HTMLElement>(null);
@@ -157,51 +152,53 @@ export function Presentation() {
   const slide = SLIDES[pos.index];
 
   return (
-    <div className="relative flex h-screen flex-col overflow-hidden bg-[#EFE9DC]">
-      <h1 className="sr-only">Duck Crossing presentation</h1>
-      <div className="flex min-h-0 flex-1">
-        <main className="stage-area flex min-w-0 flex-1 items-center justify-center">
-          <Stage label={`Slide ${pos.index + 1} of ${SLIDES.length}: ${slide.title}`}>{slide.render({ step: pos.step })}</Stage>
-        </main>
-        {notesOpen && <PresenterNotes slide={slide} index={pos.index} onClose={() => setNotesOpen(false)} />}
+    <PresentationContext.Provider value={{ liveTable, setLiveTable }}>
+      <div className="relative flex h-screen flex-col overflow-hidden bg-[#EFE9DC]">
+        <h1 className="sr-only">Duck Crossing presentation</h1>
+        <div className="flex min-h-0 flex-1">
+          <main className="stage-area flex min-w-0 flex-1 items-center justify-center">
+            <Stage label={`Slide ${pos.index + 1} of ${SLIDES.length}: ${slide.title}`}>{slide.render({ step: pos.step })}</Stage>
+          </main>
+          {notesOpen && <PresenterNotes slide={slide} index={pos.index} onClose={() => setNotesOpen(false)} />}
+        </div>
+        <footer
+          ref={footerRef}
+          className={`flex flex-wrap items-center justify-center gap-2 px-3 py-2 text-navy transition-opacity duration-300 ${
+            isFs
+              ? `absolute inset-x-0 bottom-0 bg-paper/90 hover:opacity-100 has-[:focus-visible]:opacity-100 ${idle ? 'opacity-0' : 'opacity-100'}`
+              : 'border-t border-navy/10 bg-paper'
+          }`}
+        >
+          <SlideControls index={pos.index} step={pos.step} onPrev={prev} onNext={next}>
+            <button type="button" className="ctl-btn" onClick={() => setOverview(true)} aria-keyshortcuts="O">
+              ▦ Overview
+            </button>
+            <button type="button" className="ctl-btn" onClick={() => setNotesOpen((v) => !v)} aria-pressed={notesOpen} aria-keyshortcuts="N">
+              ✎ Notes
+            </button>
+            <button type="button" className="ctl-btn" onClick={toggleFs} aria-pressed={isFs} aria-keyshortcuts="F">
+              {isFs ? '⤡ Exit fullscreen' : '⤢ Fullscreen'}
+            </button>
+            <span
+              role="status"
+              className={`rounded-full px-3 py-1 text-xs font-bold ${connected ? 'bg-moss-light' : 'bg-sun'}`}
+            >
+              {connected ? '● Live' : '○ Offline — reconnecting…'}
+            </span>
+            <NavMenu />
+          </SlideControls>
+        </footer>
+        {overview && (
+          <Overview
+            current={pos.index}
+            onPick={(i) => {
+              goTo(i);
+              setOverview(false);
+            }}
+            onClose={() => setOverview(false)}
+          />
+        )}
       </div>
-      <footer
-        ref={footerRef}
-        className={`flex flex-wrap items-center justify-center gap-2 px-3 py-2 text-navy transition-opacity duration-300 ${
-          isFs
-            ? `absolute inset-x-0 bottom-0 bg-paper/90 hover:opacity-100 has-[:focus-visible]:opacity-100 ${idle ? 'opacity-0' : 'opacity-100'}`
-            : 'border-t border-navy/10 bg-paper'
-        }`}
-      >
-        <SlideControls index={pos.index} step={pos.step} onPrev={prev} onNext={next}>
-          <button type="button" className="ctl-btn" onClick={() => setOverview(true)} aria-keyshortcuts="O">
-            ▦ Overview
-          </button>
-          <button type="button" className="ctl-btn" onClick={() => setNotesOpen((v) => !v)} aria-pressed={notesOpen} aria-keyshortcuts="N">
-            ✎ Notes
-          </button>
-          <button type="button" className="ctl-btn" onClick={toggleFs} aria-pressed={isFs} aria-keyshortcuts="F">
-            {isFs ? '⤡ Exit fullscreen' : '⤢ Fullscreen'}
-          </button>
-          <span
-            role="status"
-            className={`rounded-full px-3 py-1 text-xs font-bold ${connected ? 'bg-moss-light' : 'bg-sun'}`}
-          >
-            {connected ? '● Live' : '○ Offline — reconnecting…'}
-          </span>
-          <NavMenu />
-        </SlideControls>
-      </footer>
-      {overview && (
-        <Overview
-          current={pos.index}
-          onPick={(i) => {
-            goTo(i);
-            setOverview(false);
-          }}
-          onClose={() => setOverview(false)}
-        />
-      )}
-    </div>
+    </PresentationContext.Provider>
   );
 }

@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { DISCLAIMER, getTable } from '../../shared/content.js';
-import { evaluate, EVALUATION_LABELS } from '../../shared/evaluate.js';
-import { ANSWERS, ANSWER_LABELS, TABLE_IDS, type AnswerCounts, type AnswerKey, type Evaluation, type TableId } from '../../shared/types.js';
-import { BarChart, BarLegend } from '../components/BarChart';
+import { TABLE_IDS, type TableId } from '../../shared/types.js';
+import { BarLegend } from '../components/BarChart';
+import { ResultsCard } from '../components/ResultsCard';
 import { Duck } from '../components/Duck';
 import { Outcomes } from '../components/Outcomes';
 import { TableTabs } from '../components/TableTabs';
@@ -99,38 +99,7 @@ export function Results() {
           ) : (
             <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
               {table.cards.map((card) => (
-                <article key={card.id} className="rounded-2xl border border-navy/10 bg-white p-4 shadow-sm lg:p-5">
-                  <h2 id={`res-${card.id}`} className="mb-3 text-lg font-semibold leading-snug lg:text-xl">
-                    <span className="mr-2 inline-block rounded-md bg-navy px-2 py-0.5 text-base font-extrabold text-paper">
-                      {card.id}
-                    </span>
-                    {card.text}
-                  </h2>
-                  <BarChart
-                    counts={state.counts[card.id]}
-                    max={respondents}
-                    labelledBy={`res-${card.id}`}
-                    markFor={
-                      key
-                        ? (a) => (key[card.id]?.preferred === a ? 'preferred' : key[card.id]?.alternatives.includes(a) ? 'alternative' : null)
-                        : undefined
-                    }
-                  />
-                  {key && key[card.id] && (
-                    <div className="mt-4 border-t border-navy/10 pt-3">
-                      <p className="text-base font-bold lg:text-lg">
-                        Suggested: {ANSWER_LABELS[key[card.id].preferred]}
-                        {key[card.id].alternatives.length > 0 && (
-                          <span className="font-medium">
-                            {' '}· Also defensible: {key[card.id].alternatives.map((a) => ANSWER_LABELS[a]).join(', ')}
-                          </span>
-                        )}
-                      </p>
-                      <Tallies answerKey={key} cardId={card.id} counts={state.counts[card.id]} />
-                      <p className="mt-2 leading-relaxed lg:text-lg">{key[card.id].explanation}</p>
-                    </div>
-                  )}
-                </article>
+                <ResultsCard key={card.id} card={card} counts={state.counts[card.id]} respondents={respondents} answerKey={key} />
               ))}
             </div>
           )}
@@ -140,27 +109,3 @@ export function Results() {
   );
 }
 
-const TALLY_STYLE: Record<Evaluation, string> = {
-  match: 'bg-moss text-white',
-  discussion: 'bg-sun text-navy',
-  reconsider: 'border-2 border-dashed border-navy bg-white text-navy',
-};
-
-/** How many groups matched / gave a defensible alternative / should reconsider. */
-function Tallies({ answerKey, cardId, counts }: { answerKey: AnswerKey; cardId: string; counts: AnswerCounts }) {
-  const tally: Record<Evaluation, number> = { match: 0, discussion: 0, reconsider: 0 };
-  for (const a of ANSWERS) {
-    const ev = evaluate(answerKey, cardId, a);
-    if (ev) tally[ev] += counts[a].real + counts[a].demo;
-  }
-  return (
-    <ul className="mt-2 flex flex-wrap gap-2" aria-label="Group results for this card">
-      {(Object.keys(tally) as Evaluation[]).map((ev) => (
-        <li key={ev} className={`rounded-full px-3 py-1 text-sm font-bold lg:text-base ${TALLY_STYLE[ev]}`}>
-          <span aria-hidden>{EVALUATION_LABELS[ev].icon} </span>
-          {ev === 'match' ? 'Matches' : EVALUATION_LABELS[ev].label}: {tally[ev]}
-        </li>
-      ))}
-    </ul>
-  );
-}
