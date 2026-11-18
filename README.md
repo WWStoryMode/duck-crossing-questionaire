@@ -56,7 +56,7 @@ Runs the API/Socket.IO server on `:3000` and the Vite dev server on `:5173` (pro
 | `npm start` | Run the built app (serves everything from one process) |
 | `npm run typecheck` | TypeScript checks for client and server |
 | `npm run check:content` | Verifies all 24 cards, the answer key and the accepted alternatives |
-| `npm run smoke` | End-to-end socket test against a running server (**resets the session — never run it during class**) |
+| `SMOKE_URL=… npm run smoke` | End-to-end socket test against a running server. **Resets the session**, so it refuses to run unless `SMOKE_URL` names the server explicitly. Point it at a separate test server, never a live class. |
 
 ---
 

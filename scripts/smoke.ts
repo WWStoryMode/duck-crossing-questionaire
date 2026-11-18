@@ -6,7 +6,12 @@
 import { io, type Socket } from 'socket.io-client';
 import type { PublicState, SubmitAck, TeacherState } from '../shared/types.js';
 
-const URL = process.env.SMOKE_URL || 'http://localhost:3000';
+// No default on purpose: this test RESETS the session, so the target must be named explicitly.
+if (!process.env.SMOKE_URL) {
+  console.error('Refusing to run: set SMOKE_URL to a TEST server, e.g.\n  SMOKE_URL=http://localhost:3999 TEACHER_CODE=test npm run smoke\nThis test resets the session — never point it at a live class.');
+  process.exit(2);
+}
+const URL = process.env.SMOKE_URL;
 const CODE = process.env.TEACHER_CODE || 'duck';
 let failures = 0;
 const check = (cond: unknown, msg: string) => {
