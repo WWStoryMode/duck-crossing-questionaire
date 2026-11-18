@@ -1,5 +1,6 @@
 import { createContext, useContext } from 'react';
 import type { TableId } from '../../../shared/types.js';
+import type { Timer } from './useTimer';
 
 /** Presentation-wide state shared with slides (kept in the Presentation page so it survives slide changes). */
 export interface PresentationCtx {
@@ -10,6 +11,7 @@ export interface PresentationCtx {
   requestSignIn: () => void;
   /** Call when the server rejects the token (e.g. after a restart). */
   onAuthLost: () => void;
+  activityTimer: Timer;
 }
 
 export const PresentationContext = createContext<PresentationCtx | null>(null);

@@ -5,6 +5,8 @@ import { useJoinUrl } from '../JoinQR';
 import { Duck, DuckFamily } from '../Duck';
 import { SlideLayout } from './Slide';
 import { StreetScene } from './StreetScene';
+import { usePresentation } from './context';
+import { ActivityCountdown } from './PresentationTimer';
 
 /* Small presentational helpers (all sized in cqw). */
 
@@ -156,8 +158,9 @@ export function GameSlide() {
 }
 
 /* ---------- Slide 5 ---------- */
-export function ActivitySlide({ timer }: { timer?: ReactNode }) {
+export function ActivitySlide() {
   const url = useJoinUrl();
+  const { activityTimer } = usePresentation();
   const steps = [
     'Read Learning Outcomes A and B.',
     <>Match six game mechanics to <strong>A only / B only / Both / Neither</strong>.</>,
@@ -182,7 +185,9 @@ export function ActivitySlide({ timer }: { timer?: ReactNode }) {
               <li key={i}>{st}</li>
             ))}
           </ol>
-          {timer}
+          <div className="mt-auto">
+            <ActivityCountdown timer={activityTimer} />
+          </div>
         </div>
         <div className="flex flex-col items-center justify-center gap-[1cqw] rounded-[1.6cqw] bg-white p-[1.8cqw] shadow-sm">
           <p className="s-body font-extrabold">Scan to join</p>

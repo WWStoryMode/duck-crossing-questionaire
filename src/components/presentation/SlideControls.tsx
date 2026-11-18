@@ -20,7 +20,7 @@ export function SlideControls({ index, step, onPrev, onNext, children }: Props) 
       <button type="button" onClick={onPrev} disabled={atStart} className="ctl-btn" aria-label="Previous slide">
         ← Prev
       </button>
-      <p className="min-w-[9rem] text-center font-bold" aria-live="polite">
+      <p className="min-w-[7.5rem] text-center font-bold" aria-live="polite">
         Slide {index + 1} / {SLIDES.length}
         {steps > 1 && <span className="font-medium"> · {step + 1}/{steps}</span>}
         <span className="block text-xs font-medium opacity-80">Suggested {formatDuration(slide.seconds)}</span>

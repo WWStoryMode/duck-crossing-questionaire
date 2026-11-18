@@ -11,6 +11,8 @@ import { PresentationContext } from '../components/presentation/context';
 import type { TableId } from '../../shared/types.js';
 import { SignInDialog } from '../components/presentation/SignInDialog';
 import { useTeacherState } from '../teacher';
+import { useTimer } from '../components/presentation/useTimer';
+import { ACTIVITY_MS, ActivityPill, SessionTimer } from '../components/presentation/PresentationTimer';
 
 type Pos = { index: number; step: number };
 
@@ -69,6 +71,8 @@ export function Presentation() {
   const [teacherAuthed, setTeacherAuthed] = useState(false);
   const [signIn, setSignIn] = useState<{ message?: string } | null>(null);
   const { expired } = useTeacherState();
+  const sessionTimer = useTimer();
+  const activityTimer = useTimer(ACTIVITY_MS);
 
   // Server forgot our token (e.g. restart): drop teacher controls and ask again.
   useEffect(() => {
@@ -170,7 +174,7 @@ export function Presentation() {
   const slide = SLIDES[pos.index];
 
   return (
-    <PresentationContext.Provider value={{ liveTable, setLiveTable, teacherAuthed, requestSignIn, onAuthLost }}>
+    <PresentationContext.Provider value={{ liveTable, setLiveTable, teacherAuthed, requestSignIn, onAuthLost, activityTimer }}>
       <div className="relative flex h-screen flex-col overflow-hidden bg-[#EFE9DC]">
         <h1 className="sr-only">Duck Crossing presentation</h1>
         <div className="flex min-h-0 flex-1">
@@ -188,20 +192,23 @@ export function Presentation() {
           }`}
         >
           <SlideControls index={pos.index} step={pos.step} onPrev={prev} onNext={next}>
-            <button type="button" className="ctl-btn" onClick={() => setOverview(true)} aria-keyshortcuts="O">
-              ▦ Overview
+            <SessionTimer timer={sessionTimer} />
+            <ActivityPill timer={activityTimer} />
+            <button type="button" className="ctl-btn" onClick={() => setOverview(true)} aria-keyshortcuts="O" aria-label="Slide overview" title="Slide overview (O)">
+              ▦<span className="hidden 2xl:inline"> Overview</span>
             </button>
             <button type="button" className="ctl-btn" onClick={() => setNotesOpen((v) => !v)} aria-pressed={notesOpen} aria-keyshortcuts="N">
               ✎ Notes
             </button>
-            <button type="button" className="ctl-btn" onClick={toggleFs} aria-pressed={isFs} aria-keyshortcuts="F">
-              {isFs ? '⤡ Exit fullscreen' : '⤢ Fullscreen'}
+            <button type="button" className="ctl-btn" onClick={toggleFs} aria-pressed={isFs} aria-keyshortcuts="F" aria-label="Fullscreen" title="Fullscreen (F)">
+              {isFs ? '⤡' : '⤢'}<span className="hidden 2xl:inline">{isFs ? ' Exit fullscreen' : ' Fullscreen'}</span>
             </button>
             <span
               role="status"
+              title={connected ? 'Connected to the classroom server' : 'Disconnected — reconnecting automatically'}
               className={`rounded-full px-3 py-1 text-xs font-bold ${connected ? 'bg-moss-light' : 'bg-sun'}`}
             >
-              {connected ? '● Live' : '○ Offline — reconnecting…'}
+              {connected ? '● Live' : '○ Offline'}
             </span>
             {teacherAuthed ? (
               <span className="rounded-full bg-navy px-3 py-1 text-xs font-bold text-paper">✓ Teacher</span>
