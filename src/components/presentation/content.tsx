@@ -1,6 +1,8 @@
 import type { ReactNode } from 'react';
-import { GAME } from '../../../shared/content.js';
-import { DuckFamily } from '../Duck';
+import { QRCodeSVG } from 'qrcode.react';
+import { GAME, TABLES } from '../../../shared/content.js';
+import { useJoinUrl } from '../JoinQR';
+import { Duck, DuckFamily } from '../Duck';
 import { SlideLayout } from './Slide';
 import { StreetScene } from './StreetScene';
 
@@ -148,6 +150,141 @@ export function GameSlide() {
             </p>
           </Callout>
         </div>
+      </div>
+    </SlideLayout>
+  );
+}
+
+/* ---------- Slide 5 ---------- */
+export function ActivitySlide({ timer }: { timer?: ReactNode }) {
+  const url = useJoinUrl();
+  const steps = [
+    'Read Learning Outcomes A and B.',
+    <>Match six game mechanics to <strong>A only / B only / Both / Neither</strong>.</>,
+    'Discuss your reasoning.',
+    'Submit your answers.',
+    'Identify one debatable match.',
+  ];
+  return (
+    <SlideLayout kicker="Group activity · 4 minutes" title="Which Mechanics Support Learning?">
+      <div className="grid flex-1 grid-cols-[1.45fr_1fr] gap-[3cqw]">
+        <div className="flex flex-col gap-[1.6cqw]">
+          <ul className="grid grid-cols-2 gap-[1cqw]" aria-label="Table assignments">
+            {TABLES.map((t) => (
+              <li key={t.id} className="flex items-center gap-[1cqw] rounded-[1cqw] border border-navy/10 bg-white p-[1cqw]">
+                <span className="s-body flex h-[3.4cqw] w-[3.4cqw] shrink-0 items-center justify-center rounded-full bg-navy font-extrabold text-paper">{t.id}</span>
+                <span className="s-small font-bold leading-tight">{t.title}</span>
+              </li>
+            ))}
+          </ul>
+          <ol className="s-body list-decimal space-y-[0.4cqw] pl-[2.6cqw]">
+            {steps.map((st, i) => (
+              <li key={i}>{st}</li>
+            ))}
+          </ol>
+          {timer}
+        </div>
+        <div className="flex flex-col items-center justify-center gap-[1cqw] rounded-[1.6cqw] bg-white p-[1.8cqw] shadow-sm">
+          <p className="s-body font-extrabold">Scan to join</p>
+          <QRCodeSVG value={url} size={512} marginSize={2} title={`QR code for ${url}`} style={{ width: '100%', height: 'auto', maxWidth: '24cqw' }} />
+          <p className="s-small break-all text-center font-mono font-bold">{url}</p>
+        </div>
+      </div>
+    </SlideLayout>
+  );
+}
+
+/* ---------- Slide 7 ---------- */
+const EVIDENCE = [
+  'Observation of learner decisions',
+  'Explanations of those decisions',
+  'Performance in new situations',
+  'Pre-test / post-test comparisons',
+  'Playtesting with intended learners',
+];
+const PRINCIPLES = [
+  'Pedagogical theory helps us justify design decisions.',
+  'Constructive alignment connects objectives, activities and assessment.',
+  'Actual learning effectiveness requires evidence.',
+];
+
+/** Builds: 0 = question only, 1–3 = principles, 4 = evidence + usability contrast. */
+export const EVIDENCE_STEPS = 5;
+
+function Reveal({ show, children, className = '' }: { show: boolean; children: ReactNode; className?: string }) {
+  return (
+    <div aria-hidden={!show} className={`transition-opacity duration-300 ${show ? 'opacity-100' : 'invisible opacity-0'} ${className}`}>
+      {children}
+    </div>
+  );
+}
+
+export function EvidenceSlide({ step }: { step: number }) {
+  return (
+    <SlideLayout title="How Do We Know Learning Has Happened?" titleClass="text-[3.8cqw]">
+      <Callout label="Question" tone="navy">
+        <p className="s-lead font-semibold">
+          “If a game mechanic appears to support a learning outcome, does that prove the game actually teaches it?”
+        </p>
+      </Callout>
+      <div className="mt-[2cqw] grid flex-1 grid-cols-[1fr_1fr] gap-[2.5cqw]">
+        <ol className="flex flex-col gap-[1cqw]">
+          {PRINCIPLES.map((p, i) => (
+            <li key={p}>
+              <Reveal show={step >= i + 1}>
+                <p className={`s-body flex gap-[1cqw] rounded-[1cqw] p-[1.2cqw] font-semibold ${i === 2 ? 'bg-sun' : 'bg-moss-light'}`}>
+                  <span className="font-extrabold">{i + 1}</span>
+                  {p}
+                </p>
+              </Reveal>
+            </li>
+          ))}
+        </ol>
+        <Reveal show={step >= 4} className="flex flex-col gap-[1.2cqw]">
+          <div className="rounded-[1cqw] border border-navy/10 bg-white p-[1.4cqw]">
+            <p className="s-small font-extrabold uppercase tracking-wide">Possible evidence</p>
+            <ul className="s-small mt-[0.5cqw] space-y-[0.2cqw]">
+              {EVIDENCE.map((e) => (
+                <li key={e} className="flex gap-[0.6cqw]">
+                  <span aria-hidden className="text-moss">●</span>
+                  {e}
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div className="s-small grid grid-cols-2 gap-[1cqw]">
+            <p className="rounded-[1cqw] border-2 border-dashed border-navy/40 p-[1cqw]">
+              <strong className="block">Usability testing</strong>Can players use the game?
+            </p>
+            <p className="rounded-[1cqw] border-2 border-navy p-[1cqw]">
+              <strong className="block">Learning effectiveness</strong>Do players learn what we intended?
+            </p>
+          </div>
+        </Reveal>
+      </div>
+    </SlideLayout>
+  );
+}
+
+/* ---------- Slide 8 ---------- */
+export function ConclusionSlide() {
+  return (
+    <SlideLayout kicker="Conclusion" title="Engagement Is Not Evidence of Learning">
+      <p className="s-lead font-semibold">
+        An educational game should connect its learning objectives, player actions, feedback and assessment.
+      </p>
+      <p className="s-body mt-[1.4cqw] text-navy-light">
+        Pedagogical principles guide our design, but evidence from learners helps us determine whether it works.
+      </p>
+      <div className="mt-auto flex items-end gap-[2cqw]">
+        <div className="flex-1">
+          <Callout label="Reflect">
+            <p className="s-lead font-semibold">
+              What would you need to observe before claiming that Duck Crossing successfully teaches road safety?
+            </p>
+          </Callout>
+        </div>
+        <Duck className="w-[10cqw] shrink-0" />
       </div>
     </SlideLayout>
   );
