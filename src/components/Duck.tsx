@@ -1,6 +1,6 @@
 type Props = { className?: string; title?: string };
 
-function DuckShape({ x = 0, scale = 1 }: { x?: number; scale?: number }) {
+export function DuckShape({ x = 0, scale = 1 }: { x?: number; scale?: number }) {
   return (
     <g transform={`translate(${x} ${60 - 60 * scale}) scale(${scale})`}>
       <ellipse cx="30" cy="44" rx="24" ry="14" fill="#E9C46A" stroke="#1B2A41" strokeWidth="2" />
