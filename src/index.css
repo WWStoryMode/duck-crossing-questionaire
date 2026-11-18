@@ -21,14 +21,16 @@ body { background: #FBF8F1; color: #1B2A41; }
   overflow: hidden;
   position: relative;
 }
-.s-kicker { font-size: 1.5cqw; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; }
-.s-title  { font-size: 4.4cqw; font-weight: 800; line-height: 1.1; letter-spacing: -0.01em; }
-.s-h2     { font-size: 3.2cqw; font-weight: 800; line-height: 1.15; }
-.s-lead   { font-size: 2.5cqw; line-height: 1.35; }
-.s-body   { font-size: 2cqw;   line-height: 1.4; }
-.s-small  { font-size: 1.55cqw; line-height: 1.4; }
-.s-tiny   { font-size: 1.2cqw; line-height: 1.4; }
-.s-pad    { padding: 4cqw 5cqw 7cqw; }
+@layer components {
+  .s-kicker { font-size: 1.5cqw; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; }
+  .s-title  { font-size: 4.4cqw; font-weight: 800; line-height: 1.1; letter-spacing: -0.01em; }
+  .s-h2     { font-size: 3.2cqw; font-weight: 800; line-height: 1.15; }
+  .s-lead   { font-size: 2.5cqw; line-height: 1.35; }
+  .s-body   { font-size: 2cqw;   line-height: 1.4; }
+  .s-small  { font-size: 1.55cqw; line-height: 1.4; }
+  .s-tiny   { font-size: 1.2cqw; line-height: 1.4; }
+  .s-pad    { padding: 4cqw 5cqw 7cqw; }
+}
 
 .ctl-btn {
   border-radius: 0.6rem; border: 2px solid #1B2A41; background: #fff; color: #1B2A41;

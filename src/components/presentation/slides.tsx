@@ -1,5 +1,16 @@
 import type { ReactNode } from 'react';
 import { SlideLayout } from './Slide';
+import { NOTES } from './notes';
+import {
+  ActivitySlide,
+  ConclusionSlide,
+  EVIDENCE_STEPS,
+  EvidenceSlide,
+  GameSlide,
+  MechanicsSlide,
+  OpeningSlide,
+  OutcomeSlide,
+} from './content';
 
 /**
  * Presentation content. Edit slides here: each entry is self-contained.
@@ -25,15 +36,17 @@ export interface SlideDef {
 const placeholder = (title: string) => () => <SlideLayout title={title} />;
 
 export const SLIDES: SlideDef[] = [
-  { id: 'opening', title: 'Pedagogy and Game-Based Learning', seconds: 90, render: placeholder('Pedagogy and Game-Based Learning') },
-  { id: 'outcome', title: 'What are we learning today?', seconds: 60, render: placeholder('What are we learning today?') },
-  { id: 'mechanics', title: 'From Learning Outcomes to Game Mechanics', seconds: 60, render: placeholder('From Learning Outcomes to Game Mechanics') },
-  { id: 'game', title: 'Duck Crossing: A Game in Development', seconds: 60, render: placeholder('Duck Crossing: A Game in Development') },
-  { id: 'activity', title: 'Which Mechanics Support Learning?', seconds: 285, render: placeholder('Which Mechanics Support Learning?') },
+  { id: 'opening', title: 'Pedagogy and Game-Based Learning', seconds: 90, render: () => <OpeningSlide /> },
+  { id: 'outcome', title: 'What are we learning today?', seconds: 60, render: () => <OutcomeSlide /> },
+  { id: 'mechanics', title: 'From Learning Outcomes to Game Mechanics', seconds: 60, render: () => <MechanicsSlide /> },
+  { id: 'game', title: 'Duck Crossing: A Game in Development', seconds: 60, render: () => <GameSlide /> },
+  { id: 'activity', title: 'Which Mechanics Support Learning?', seconds: 285, render: () => <ActivitySlide /> },
   { id: 'results', title: 'What Did We Choose, and Why?', seconds: 165, render: placeholder('What Did We Choose, and Why?') },
-  { id: 'evidence', title: 'How Do We Know Learning Has Happened?', seconds: 90, render: placeholder('How Do We Know Learning Has Happened?') },
-  { id: 'conclusion', title: 'Engagement Is Not Evidence of Learning', seconds: 45, render: placeholder('Engagement Is Not Evidence of Learning') },
+  { id: 'evidence', title: 'How Do We Know Learning Has Happened?', seconds: 90, steps: EVIDENCE_STEPS, render: ({ step }) => <EvidenceSlide step={step} /> },
+  { id: 'conclusion', title: 'Engagement Is Not Evidence of Learning', seconds: 45, render: () => <ConclusionSlide /> },
 ];
+
+for (const slide of SLIDES) slide.notes = NOTES[slide.id];
 
 export const TOTAL_SECONDS = SLIDES.reduce((n, s) => n + s.seconds, 0);
 
